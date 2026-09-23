@@ -309,16 +309,43 @@ function jsonp(url){
     document.body.appendChild(s);
   });
 }
+function sleep(ms){ return new Promise(resolve => setTimeout(resolve, ms)); }
+let amapQueue = Promise.resolve();
+function enqueueAmap(fn){
+  const run = amapQueue.then(fn, fn);
+  amapQueue = run.catch(() => {});
+  return run;
+}
+function amapLimited(data){
+  const info = String((data && (data.info || data.infocode)) || "");
+  return /CUQPS_HAS_EXCEEDED_THE_LIMIT|USER_DAILY_QUERY_OVER_LIMIT|OVER/.test(info);
+}
 async function amapAround(lat, lon, kw, radius, page){
   if (!KEY) throw new Error("missing-key");
-  const qs = "key=" + KEY + "&location=" + lon + "," + lat + "&keywords=" + encodeURIComponent(kw) + "&radius=" + radius + "&offset=25&page=" + (page||1) + "&extensions=all&output=json";
-  const url = "https://restapi.amap.com/v3/place/around?" + qs;
-  try {
-    const r = await fetch(url);
-    const data = await r.json();
-    if (data && data.status === "1") return data;
-  } catch (e) {}
-  return jsonp("https://restapi.amap.com/v3/place/around?" + qs);
+  return enqueueAmap(async () => {
+    const qs = "key=" + KEY + "&location=" + lon + "," + lat + "&keywords=" + encodeURIComponent(kw) + "&radius=" + radius + "&offset=25&page=" + (page||1) + "&extensions=all&output=json";
+    const url = "https://restapi.amap.com/v3/place/around?" + qs;
+    let last = {pois:[]};
+    for (let attempt = 0; attempt < 4; attempt++) {
+      if (attempt) await sleep(400 * attempt);
+      else await sleep(180);
+      try {
+        const r = await fetch(url);
+        const data = await r.json();
+        if (data && data.status === "1") return data;
+        last = data || last;
+        if (amapLimited(data)) continue;
+        break;
+      } catch (e) {}
+      try {
+        const data = await jsonp(url);
+        if (data && data.status === "1") return data;
+        last = data || last;
+        if (amapLimited(data)) continue;
+      } catch (e) {}
+    }
+    return last && last.pois ? last : {pois:[]};
+  });
 }
 function asText(v){
   if (v == null || v === "" || (Array.isArray(v) && !v.length)) return "";
@@ -405,12 +432,12 @@ function haversine(lat1, lon1, lat2, lon2){
 async function fetchKind(lat, lon, kind, apiRadius){
   const queries = {
     xiaoqu: ["小区"],
-    school: ["幼儿园", "小学", "初中", "高中", "学校"],
-    mall: ["购物中心", "商场", "商圈"]
+    school: ["幼儿园", "小学", "中学"],
+    mall: ["商场", "购物中心"]
   }[kind];
   const seen = new Map();
   for (const kw of queries) {
-    for (let page = 1; page <= 3; page++) {
+    for (let page = 1; page <= 2; page++) {
       const data = await amapAround(lat, lon, kw, apiRadius, page);
       const pois = data.pois || [];
       if (!pois.length) break;
