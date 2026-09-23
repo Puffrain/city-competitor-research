@@ -5,7 +5,7 @@ description: Turn an industry plus one or more Chinese cities into an operating-
 
 # 城市竞品搜集
 
-用户只给行业和城市时，按昆山那套交付：一份可编辑 Word，一张可筛选、可搜附近小学的高德地图。只收在营。没查到写未查到，不编。
+用户只给行业和城市时，按昆山那套交付：一份可编辑 Word，一张可筛选、可点店看附近 3 公里小区/学校/商场的高德地图。只收在营。没查到写未查到，不编。
 
 ## 用户怎么说
 
@@ -23,7 +23,7 @@ description: Turn an industry plus one or more Chinese cities into an operating-
 2. `{城市}{行业}竞品地图-高德.html`
 3. `{城市}{行业}-raw.json`（中间结果，不主动发给用户）
 
-地图能力必须齐：高德路网、城市轮廓、P1/P2/P3 筛选、图钉、附近小学/小区搜索。
+地图能力必须齐：高德路网、城市轮廓、P1/P2/P3 筛选、图钉、点店看附近 3 公里小区/学校/商场。
 
 ## 工作流
 
@@ -46,7 +46,7 @@ python3 scripts/run_research.py \
 python3 scripts/build_report.py --in-json raw.json --out report.docx
 python3 scripts/build_map.py --in-json raw.json --out map.html
 ```
-5. Word 用 documents skill 做完再给用户。地图让用户刷新已打开的 HTML；`file://` 搜附近失败时，用本地 `python3 -m http.server`。
+5. Word 用 documents skill 做完再给用户。地图让用户刷新已打开的 HTML；`file://` 搜附近失败时，用本地 `python3 -m http.server`。点一家店应出现店卡、可选半径虚线圈（100米/500米/1公里/3公里或自填），以及小区/学校/商场名称图钉。学校可按幼儿园、小学、初中、高中、其他筛选；也可在地图上自己落点看附近。
 
 不要用官方 JS API。当前这把钥匙是 Web 服务 Key。不要把 Key 提交到 git。
 
@@ -65,4 +65,4 @@ python3 scripts/build_map.py --in-json raw.json --out map.html
 - 已验证：脚本能跑通；地图有轮廓和店点
 - 未验证：点评条数、价格、班额（公开接口没有就标未查到）
 - 已知风险：高德配额、误分类、`file://` 拦附近搜索
-- 用户怎么确认：打开 Word 改黄底；打开地图放大到小区，点一家店搜「小学」
+- 用户怎么确认：打开 Word 改黄底；打开地图点一家店，切 100 米 / 500 米看圈变小，小区/学校/商场 tab 有名称，小区有房价检索链接
