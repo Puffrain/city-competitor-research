@@ -11,7 +11,7 @@
 3. 当前项目 `secrets/amap.env`
 4. 当前项目 `amap.env`
 
-不要把 Key 写进 Git、Word、聊天记录。地图 HTML 默认不内嵌 Key；附近搜索会读 `?key=`、`localStorage.AMAP_MAPS_API_KEY` 或同目录 `amap-key.js`。
+不要把 Key 写进 Git、Word、聊天记录。地图 HTML 默认不内嵌 Key。打开后在左侧填写高德 Web 服务 Key，点保存，会记在本机浏览器。也可以用 `?key=`。
 
 ## 用到的接口
 

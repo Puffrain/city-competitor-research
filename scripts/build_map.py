@@ -85,6 +85,13 @@ TEMPLATE = r"""<!DOCTYPE html>
   <aside id="side">
     <h1>__TITLE__</h1>
     <p class="meta">点一家店，或自己在地图上落一个点，按半径看附近小区、学校、商圈。蓝色线是__CITY__边界。</p>
+    <div class="group">高德 Web 服务 Key</div>
+    <div class="radius-row">
+      <input id="amap-key" type="password" autocomplete="off" spellcheck="false" placeholder="在这里填写 Key，只存在你的浏览器">
+      <button type="button" class="primary" id="amap-key-save">保存</button>
+      <button type="button" id="amap-key-clear">清除</button>
+    </div>
+    <p class="note" id="amap-key-status">搜附近小区、学校、商圈前，先填 Key。</p>
     <label class="row"><input type="checkbox" id="f-bound" checked><span>显示__CITY__轮廓</span></label>
     <div class="group">看哪些竞品</div>
     <label class="row"><input type="checkbox" id="f-P1" checked><span class="p1">P1 优先深挖</span> <span class="count" id="c-P1"></span></label>
@@ -141,16 +148,31 @@ TEMPLATE = r"""<!DOCTYPE html>
     <div class="hint" id="hint">点一家店，或自己在地图上加一个点，按半径看附近小区、学校、商圈。</div>
   </div>
 </div>
-<script src="amap-key.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 function readKey(){
   const q = new URLSearchParams(location.search).get("key");
-  if (q) return q;
-  try { if (localStorage.AMAP_MAPS_API_KEY) return localStorage.AMAP_MAPS_API_KEY; } catch (e) {}
-  return window.AMAP_MAPS_API_KEY || "";
+  if (q) return q.trim();
+  try { if (localStorage.AMAP_MAPS_API_KEY) return String(localStorage.AMAP_MAPS_API_KEY).trim(); } catch (e) {}
+  return "";
 }
-const KEY = readKey();
+let KEY = readKey();
+function keyStatus(){
+  const el = document.getElementById("amap-key-status");
+  if (!el) return;
+  el.textContent = KEY ? "已保存到本机浏览器。换电脑或清缓存后需要再填。" : "还没填 Key。不填也能看店点，但不能搜附近小区、学校、商圈。";
+}
+function saveKey(v){
+  KEY = String(v || "").trim();
+  try {
+    if (KEY) localStorage.AMAP_MAPS_API_KEY = KEY;
+    else delete localStorage.AMAP_MAPS_API_KEY;
+  } catch (e) {}
+  const box = document.getElementById("amap-key");
+  if (box) box.value = KEY;
+  keyStatus();
+  if (KEY && current) loadCatchment(current, true);
+}
 const CITY = "__CITY__";
 const cityBound = __BOUND__;
 const pts = __PTS__;
@@ -578,7 +600,7 @@ async function loadCatchment(d, force){
   } catch (e) {
     if (token !== catchmentToken) return;
     nearList.textContent = e && e.message === "missing-key"
-      ? "附近搜索需要高德 Web 服务 Key。可在地址后加 ?key=你的Key，或复制 amap-key.js.example 为 amap-key.js。"
+      ? "还没填高德 Web 服务 Key。请在左侧输入框填好后点保存。"
       : "附近搜索暂时失败。请确认能上网，或用本地服务器打开这个网页。";
   }
 }
@@ -616,7 +638,7 @@ async function searchCustom(){
       nearList.appendChild(row);
     });
   } catch (e) {
-    nearList.textContent = e && e.message === "missing-key" ? "缺少高德 Key。" : "搜索失败。";
+    nearList.textContent = e && e.message === "missing-key" ? "还没填高德 Key，请先在左侧保存。" : "搜索失败。";
   }
 }
 document.getElementById("f-bound").addEventListener("change", () => {
@@ -629,6 +651,11 @@ document.getElementById("q").addEventListener("input", renderList);
 document.getElementById("all").onclick = () => { pts.forEach(d => selected[d.no]=true); document.getElementById("f-P1").checked=document.getElementById("f-P2").checked=document.getElementById("f-P3").checked=true; renderList(); };
 document.getElementById("none").onclick = () => { pts.forEach(d => selected[d.no]=false); renderList(); };
 document.getElementById("onlyp1").onclick = () => { document.getElementById("f-P1").checked=true; document.getElementById("f-P2").checked=false; document.getElementById("f-P3").checked=false; pts.forEach(d => selected[d.no]= d.p==="P1"); renderList(); };
+document.getElementById("amap-key").value = KEY;
+keyStatus();
+document.getElementById("amap-key-save").onclick = () => saveKey(document.getElementById("amap-key").value);
+document.getElementById("amap-key-clear").onclick = () => saveKey("");
+document.getElementById("amap-key").addEventListener("keydown", e => { if (e.key === "Enter") saveKey(e.target.value); });
 document.getElementById("near-btn").onclick = () => current && loadCatchment(current, true);
 document.getElementById("drop-point").onclick = () => setDropMode(!dropMode);
 map.on("click", e => {
