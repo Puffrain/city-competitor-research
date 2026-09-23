@@ -1,0 +1,7 @@
+interface:
+  display_name: "城市竞品搜集"
+  short_description: "按行业和城市生成在营竞品Word报告与高德交互地图"
+  default_prompt: "Use $city-competitor-research to research operating competitors in 昆山 for 少儿编程 and 机器人教育, then deliver a Word report and an Amap HTML map."
+
+policy:
+  allow_implicit_invocation: true

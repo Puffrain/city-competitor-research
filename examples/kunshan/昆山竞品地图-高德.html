@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>昆山市在营业竞品地图</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css">
+<style>
+  html,body{margin:0;height:100%;font-family:-apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif;color:#1b1b1b;background:#efeae1;}
+  #wrap{display:grid;grid-template-columns:320px 1fr;height:100%;}
+  #side{background:#fff;border-right:1px solid #e4ddd0;overflow:auto;padding:12px 14px 24px;}
+  #map{position:relative;min-height:420px;}
+  h1{margin:0;font-size:17px;}
+  .meta{margin:4px 0 0;font-size:12px;color:#666;line-height:1.45;}
+  .group{margin:14px 0 6px;font-size:12px;font-weight:700;letter-spacing:.04em;}
+  .row{display:flex;align-items:center;gap:8px;margin:6px 0;font-size:13px;}
+  .row input{margin:0;}
+  .count{color:#777;font-weight:500;}
+  input[type=search], input[type=text], select{
+    width:100%;box-sizing:border-box;padding:7px 9px;border:1px solid #d7d1c4;border-radius:6px;font-size:13px;background:#fff;
+  }
+  .actions{display:flex;gap:6px;margin:8px 0 4px;flex-wrap:wrap;}
+  button{font-size:12px;padding:6px 9px;border:1px solid #d7d1c4;background:#faf8f3;border-radius:6px;cursor:pointer;}
+  button.primary{background:#1d4ed8;color:#fff;border-color:#1d4ed8;}
+  .store{display:flex;align-items:flex-start;gap:6px;padding:6px 0;font-size:12px;border-bottom:1px solid #f1ece3;cursor:pointer;}
+  .store b{min-width:22px;}
+  .p1{color:#C2410C;} .p2{color:#1D4ED8;} .p3{color:#0F766E;}
+  .mk{position:relative;width:28px;height:32px;}
+  .mk .head{width:20px;height:20px;margin:0 auto;border-radius:50%;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;color:#fff;font:700 10px/1 -apple-system,"PingFang SC",sans-serif;}
+  .mk .tip{width:0;height:0;margin:-1px auto 0;border-left:6px solid transparent;border-right:6px solid transparent;border-top:10px solid currentColor;filter:drop-shadow(0 1px 1px rgba(0,0,0,.2));}
+  .mk .lab{position:absolute;left:26px;top:0;background:#fff;border:1px solid #e5e1d8;border-radius:4px;padding:1px 6px;white-space:nowrap;box-shadow:0 1px 3px rgba(0,0,0,.16);font:12px/1.3 -apple-system,"PingFang SC",sans-serif;color:#111;}
+  .mk .lab b{font-weight:700;}
+  .mk .lab em{font-style:normal;margin-left:4px;font-weight:700;}
+  .mk.active .head{box-shadow:0 0 0 3px rgba(17,17,17,.2),0 1px 4px rgba(0,0,0,.35);}
+  .near-mk{position:relative;width:14px;height:14px;}
+  .near-mk i{display:block;width:12px;height:12px;border-radius:50%;background:#ca8a04;border:2px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,.3);}
+  .near-mk .lab{position:absolute;left:16px;top:-3px;background:#fff8e8;border:1px solid #ca8a04;border-radius:4px;padding:1px 5px;white-space:nowrap;font:11px/1.3 -apple-system,"PingFang SC",sans-serif;box-shadow:0 1px 2px rgba(0,0,0,.12);}
+  .origin-mk{position:relative;width:18px;height:18px;}
+  .origin-mk i{display:block;width:14px;height:14px;margin:2px;border-radius:50%;background:#111;border:3px solid #fff;box-shadow:0 0 0 6px rgba(17,17,17,.16),0 1px 4px rgba(0,0,0,.3);}
+  .leaflet-div-icon{background:transparent;border:0;}
+  .near-item{font-size:12px;padding:6px 0;border-bottom:1px solid #f0ece3;cursor:pointer;}
+  .near-item span{color:#777;}
+  .searchbar{position:absolute;z-index:500;left:14px;top:14px;right:14px;display:flex;gap:8px;max-width:560px;}
+  .searchbar input{flex:1;padding:10px 12px;border:0;border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.18);font-size:14px;}
+  .searchbar button{padding:10px 12px;border:0;border-radius:8px;background:#1d4ed8;color:#fff;box-shadow:0 8px 24px rgba(0,0,0,.18);}
+  .hint{position:absolute;z-index:500;left:14px;bottom:18px;background:rgba(255,255,255,.92);padding:8px 10px;border-radius:8px;font-size:12px;box-shadow:0 4px 16px rgba(0,0,0,.12);max-width:360px;}
+  @media (max-width: 860px){
+    #wrap{grid-template-columns:1fr;grid-template-rows:42vh 1fr;}
+    #side{border-right:0;border-top:1px solid #e4ddd0;}
+    .searchbar{right:70px;}
+  }
+</style>
+</head>
+<body>
+<div id="wrap">
+  <aside id="side">
+    <h1>昆山市在营业竞品地图</h1>
+    <p class="meta">蓝色线是昆山市边界。高德路网可放大到小区、道路。点一家店，或点地图空白处，再搜附近小学、小区。</p>
+    <label class="row"><input type="checkbox" id="f-bound" checked><span>显示昆山市轮廓</span></label>
+    <div class="group">看哪些竞品</div>
+    <label class="row"><input type="checkbox" id="f-P1" checked><span class="p1">P1 优先深挖</span> <span class="count" id="c-P1"></span></label>
+    <label class="row"><input type="checkbox" id="f-P2" checked><span class="p2">P2 核心补全</span> <span class="count" id="c-P2"></span></label>
+    <label class="row"><input type="checkbox" id="f-P3" checked><span class="p3">P3 相邻入口</span> <span class="count" id="c-P3"></span></label>
+    <div class="actions">
+      <button type="button" id="onlyp1">只看 P1</button>
+      <button type="button" id="all">全看</button>
+      <button type="button" id="none">先清空</button>
+    </div>
+    <input id="q" type="search" placeholder="筛店名、品牌、地址">
+    <div id="list"></div>
+    <div class="group">附近搜什么</div>
+    <input id="near-q" type="text" value="小学" placeholder="小学 / 幼儿园 / 小区 / 商场 / 地铁站">
+    <div class="row" style="margin-top:8px;">
+      <span>范围</span>
+      <select id="near-r" style="width:auto;min-width:110px;">
+        <option value="800">800 米</option>
+        <option value="1500" selected>1.5 公里</option>
+        <option value="3000">3 公里</option>
+      </select>
+    </div>
+    <div class="actions">
+      <button type="button" class="primary" id="near-btn">搜附近</button>
+      <button type="button" id="near-center">按地图中心搜</button>
+      <button type="button" id="near-clear">清掉附近结果</button>
+    </div>
+    <div id="near-list" class="meta">先点一家店，或点地图上任意位置，再搜附近。</div>
+  </aside>
+  <div id="map">
+    <div class="searchbar">
+      <input id="map-q" type="search" placeholder="搜附近：小学、幼儿园、小区、商场…">
+      <button type="button" id="map-search">搜索</button>
+    </div>
+    <div class="hint" id="hint">滚轮放大可看到镇区和小区。黄标是附近搜索结果。</div>
+  </div>
+</div>
+<script src="amap-key.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+function readKey(){
+  const q = new URLSearchParams(location.search).get("key");
+  if (q) return q;
+  try { if (localStorage.AMAP_MAPS_API_KEY) return localStorage.AMAP_MAPS_API_KEY; } catch (e) {}
+  return window.AMAP_MAPS_API_KEY || "";
+}
+const KEY = readKey();
+const cityBound = [[[31.286082,121.11074],[31.28293,121.112476],[31.279993,121.109703],[31.281021,121.108965],[31.280743,121.108467],[31.279496,121.109292],[31.278001,121.108032],[31.276707,121.106669],[31.275327,121.103822],[31.274751,121.103848],[31.27504,121.10581],[31.273651,121.105445],[31.274107,121.103179],[31.276251,121.098804],[31.27738,121.098057],[31.278843,121.098361],[31.287004,121.0954],[31.288317,121.094262],[31.28821,121.09309],[31.289879,121.093585],[31.289204,121.092195],[31.291903,121.090137],[31.291723,121.086904],[31.290658,121.08733],[31.287601,121.084697],[31.277259,121.081359],[31.275708,121.084548],[31.271538,121.082149],[31.270157,121.080419],[31.269883,121.079176],[31.267451,121.062462],[31.266714,121.06227],[31.266664,121.062931],[31.257943,121.061947],[31.257699,121.062652],[31.256032,121.062086],[31.255699,121.061234],[31.255139,121.061303],[31.255157,121.061912],[31.252969,121.061895],[31.248217,121.060812],[31.246489,121.060981],[31.247239,121.05911],[31.246754,121.057677],[31.245246,121.061651],[31.246372,121.062268],[31.246136,121.064347],[31.243583,121.064173],[31.243141,121.065061],[31.242153,121.064721],[31.242219,121.063564],[31.238441,121.063903],[31.237822,121.061241],[31.235238,121.061998],[31.234694,121.062607],[31.235139,121.063729],[31.234151,121.063668],[31.234152,121.064555],[31.23296,121.064581],[31.23293,121.067382],[31.230922,121.067173],[31.230781,121.064651],[31.227274,121.06472],[31.226965,121.062806],[31.224665,121.062631],[31.222949,121.063418],[31.200999,121.067809],[31.196519,121.069214],[31.197187,121.066605],[31.194964,121.066796],[31.195309,121.069597],[31.193608,121.07011],[31.193168,121.072188],[31.191533,121.072562],[31.191294,121.070614],[31.190409,121.070892],[31.189863,121.070344],[31.188738,121.070344],[31.188434,121.071466],[31.185959,121.071683],[31.184895,121.068752],[31.182892,121.069474],[31.184385,121.074988],[31.18285,121.075587],[31.181466,121.071222],[31.179475,121.071404],[31.176224,121.07423],[31.173444,121.07543],[31.172698,121.072526],[31.171624,121.07276],[31.170513,121.071917],[31.169606,121.072386],[31.170317,121.075468],[31.166017,121.077298],[31.164538,121.077368],[31.163256,121.073125],[31.161711,121.073699],[31.162622,121.076794],[31.160708,121.077063],[31.160539,121.076054],[31.158456,121.077028],[31.156267,121.073029],[31.155595,121.072559],[31.153848,121.073028],[31.15351,121.072046],[31.155424,121.071411],[31.155121,121.070567],[31.153508,121.070906],[31.152966,121.06848],[31.152294,121.067776],[31.148701,121.069123],[31.148263,121.068445],[31.148596,121.065722],[31.149401,121.065418],[31.149973,121.066097],[31.150948,121.066062],[31.150842,121.064139],[31.152154,121.06407],[31.152119,121.062696],[31.153126,121.062556],[31.15278,121.057379],[31.151802,121.055656],[31.15066,121.05583],[31.150484,121.051888],[31.150715,121.050269],[31.15461,121.049129],[31.154031,121.04542],[31.151577,121.045254],[31.149822,121.041476],[31.146932,121.041545],[31.146466,121.04353],[31.145529,121.044775],[31.137587,121.040769],[31.136911,121.038645],[31.137849,121.038105],[31.137373,121.036259],[31.140331,121.03612],[31.142205,121.033089],[31.141253,121.028778],[31.143873,121.028368],[31.143766,121.026723],[31.14266,121.027192],[31.142624,121.026618],[31.140773,121.025677],[31.140932,121.022907],[31.140462,121.022271],[31.138311,121.022811],[31.134097,121.018489],[31.133177,120.991255],[31.13171,120.983911],[31.138253,120.952645],[31.14141,120.930336],[31.13619,120.916919],[31.134272,120.906402],[31.136053,120.899215],[31.134721,120.881293],[31.131489,120.876429],[31.127158,120.872345],[31.123803,120.871018],[31.119712,120.870593],[31.114746,120.865965],[31.112503,120.862247],[31.109325,120.860219],[31.108523,120.857914],[31.107654,120.858079],[31.103895,120.856856],[31.110006,120.850182],[31.109496,120.847045],[31.110176,120.84663],[31.110723,120.847211],[31.111817,120.845072],[31.112347,120.846796],[31.114055,120.845636],[31.116485,120.841792],[31.118421,120.837894],[31.122785,120.822831],[31.124617,120.819843],[31.131629,120.815443],[31.142602,120.813209],[31.147798,120.813218],[31.150681,120.814743],[31.151137,120.823267],[31.159661,120.822618],[31.160037,120.821951],[31.165333,120.823121],[31.168439,120.822186],[31.173573,120.815914],[31.180876,120.816339],[31.185923,120.818436],[31.187911,120.821269],[31.190105,120.827462],[31.190349,120.833673],[31.189229,120.839632],[31.190863,120.841538],[31.19216,120.842084],[31.198344,120.843168],[31.204314,120.848236],[31.207289,120.855712],[31.211458,120.860366],[31.211839,120.861406],[31.211722,120.871875],[31.209257,120.879183],[31.209804,120.881871],[31.213672,120.89169],[31.214972,120.897382],[31.217471,120.898319],[31.218905,120.901288],[31.221428,120.900958],[31.224442,120.898867],[31.225621,120.899873],[31.226078,120.901202],[31.227933,120.901511],[31.230391,120.901188],[31.231236,120.899648],[31.232706,120.898564],[31.236481,120.897028],[31.239369,120.892543],[31.238348,120.890261],[31.238349,120.888534],[31.246311,120.887824],[31.247086,120.888526],[31.248211,120.891415],[31.249832,120.891701],[31.251857,120.890062],[31.252432,120.886862],[31.263861,120.881928],[31.264554,120.881161],[31.268414,120.881189],[31.270316,120.882389],[31.270382,120.884237],[31.271217,120.88452],[31.271437,120.880775],[31.275782,120.880732],[31.275838,120.882759],[31.277903,120.884114],[31.278335,120.88384],[31.278264,120.880703],[31.280263,120.88063],[31.280098,120.884328],[31.282606,120.884102],[31.282343,120.881018],[31.284132,120.881313],[31.284076,120.879231],[31.286214,120.879138],[31.290814,120.877642],[31.291619,120.87211],[31.292544,120.871025],[31.299112,120.871001],[31.300805,120.869514],[31.304876,120.868075],[31.313286,120.862696],[31.321192,120.860115],[31.333615,120.854284],[31.337674,120.853765],[31.364323,120.846416],[31.363972,120.844626],[31.366641,120.843416],[31.366,120.840212],[31.367869,120.838139],[31.368656,120.84122],[31.370947,120.840332],[31.370211,120.834211],[31.369833,120.832829],[31.369247,120.833073],[31.369019,120.830634],[31.370607,120.829952],[31.370313,120.827889],[31.371671,120.827176],[31.369637,120.819429],[31.373448,120.820266],[31.375042,120.822869],[31.384724,120.82125],[31.417615,120.825801],[31.434911,120.830331],[31.444269,120.827483],[31.464666,120.825389],[31.46881,120.824107],[31.475816,120.824264],[31.483594,120.822246],[31.489028,120.818392],[31.489356,120.816989],[31.490257,120.816642],[31.491214,120.814667],[31.492792,120.814269],[31.503836,120.817665],[31.503618,120.811766],[31.509065,120.812008],[31.509958,120.809534],[31.511929,120.808567],[31.514824,120.808979],[31.519654,120.815354],[31.519965,120.834705],[31.521157,120.846624],[31.520896,120.848963],[31.517259,120.848772],[31.516486,120.846511],[31.515025,120.846537],[31.513238,120.849413],[31.511802,120.850435],[31.507788,120.850842],[31.507808,120.852904],[31.506101,120.856188],[31.506029,120.860425],[31.505045,120.863899],[31.511665,120.865131],[31.51042,120.869264],[31.511019,120.870617],[31.513094,120.871934],[31.516807,120.872342],[31.516809,120.874813],[31.518699,120.874718],[31.520459,120.875446],[31.522249,120.877605],[31.530574,120.878707],[31.529449,120.883268],[31.52948,120.885279],[31.530323,120.886719],[31.533785,120.886061],[31.53268,120.889261],[31.534631,120.892888],[31.534733,120.899152],[31.535414,120.900011],[31.540929,120.898684],[31.539798,120.900186],[31.538174,120.90443],[31.528351,120.895924],[31.525686,120.900132],[31.529222,120.908987],[31.527681,120.911818],[31.524991,120.914293],[31.523653,120.912972],[31.521667,120.912929],[31.519962,120.914405],[31.518042,120.917384],[31.519879,120.917758],[31.520956,120.918696],[31.523503,120.923588],[31.524741,120.927603],[31.528182,120.931941],[31.530603,120.936802],[31.526894,120.937975],[31.525949,120.939071],[31.523383,120.94034],[31.516709,120.941262],[31.517679,120.94669],[31.513203,120.947533],[31.512362,120.952954],[31.507982,120.954468],[31.507222,120.955391],[31.50714,120.9568],[31.497719,120.95841],[31.498923,120.964582],[31.500946,120.967237],[31.496063,120.970947],[31.493775,120.97571],[31.49405,120.980256],[31.495703,120.98375],[31.498967,120.988218],[31.498985,120.989186],[31.497792,120.991546],[31.495801,120.992688],[31.497704,120.998473],[31.495664,121.000137],[31.494672,121.002114],[31.4927,121.003996],[31.493559,121.007464],[31.493051,121.010687],[31.493414,121.01175],[31.496636,121.013423],[31.496334,121.015567],[31.495438,121.016394],[31.491808,121.014721],[31.490103,121.015157],[31.484368,121.020104],[31.482547,121.020157],[31.479611,121.015923],[31.47733,121.015974],[31.475186,121.01749],[31.468665,121.016461],[31.467752,121.016801],[31.468462,121.013308],[31.467512,121.010764],[31.460915,121.013386],[31.457238,121.014004],[31.457258,121.015058],[31.454642,121.019963],[31.453079,121.026626],[31.449134,121.022488],[31.447651,121.019343],[31.445479,121.02045],[31.441485,121.020981],[31.436358,121.02321],[31.435655,121.027156],[31.433335,121.027496],[31.43288,121.030832],[31.434493,121.041822],[31.431298,121.043702],[31.428003,121.047089],[31.427922,121.049666],[31.426397,121.051198],[31.431836,121.059535],[31.432397,121.065024],[31.423937,121.067146],[31.423474,121.070721],[31.428252,121.078477],[31.435652,121.084692],[31.436029,121.087134],[31.431559,121.092981],[31.429107,121.094848],[31.425697,121.096359],[31.424067,121.098461],[31.422338,121.098747],[31.416334,121.089574],[31.415284,121.089869],[31.413921,121.095159],[31.411744,121.094855],[31.405386,121.091128],[31.403521,121.090554],[31.401271,121.088704],[31.395905,121.088338],[31.394498,121.085706],[31.393785,121.087122],[31.38635,121.093359],[31.386328,121.094881],[31.388075,121.094856],[31.388571,121.09688],[31.391054,121.097098],[31.391587,121.098863],[31.379894,121.102747],[31.379763,121.103233],[31.377753,121.103761],[31.377415,121.103202],[31.360455,121.108248],[31.357306,121.108083],[31.357186,121.107276],[31.355248,121.107275],[31.354036,121.108412],[31.352905,121.107961],[31.350643,121.108325],[31.35153,121.111155],[31.350521,121.11184],[31.350479,121.112526],[31.351489,121.115953],[31.351405,121.117974],[31.347568,121.120195],[31.347125,121.117324],[31.343449,121.117974],[31.342759,121.123942],[31.342919,121.126362],[31.344207,121.130438],[31.341515,121.13081],[31.340239,121.129856],[31.338612,121.13055],[31.336146,121.130463],[31.335103,121.12983],[31.334346,121.130931],[31.332107,121.131147],[31.331965,121.132578],[31.33066,121.132726],[31.330164,121.13348],[31.328686,121.133246],[31.328629,121.131858],[31.328019,121.131824],[31.327321,121.133271],[31.32648,121.133566],[31.325579,121.133306],[31.325438,121.131537],[31.322395,121.131207],[31.321787,121.129291],[31.320306,121.129248],[31.319543,121.128614],[31.319312,121.127253],[31.318587,121.126967],[31.316933,121.127079],[31.316061,121.128241],[31.314639,121.128181],[31.314261,121.12864],[31.311882,121.127972],[31.311301,121.129108],[31.310199,121.128874],[31.308311,121.129776],[31.307528,121.129134],[31.302592,121.129948],[31.302243,121.13318],[31.303228,121.139404],[31.30563,121.138957],[31.3097,121.143776],[31.30593,121.146902],[31.303329,121.148146],[31.302735,121.146443],[31.301311,121.147067],[31.301347,121.149118],[31.299017,121.150786],[31.298877,121.148932],[31.298199,121.147788],[31.297447,121.148004],[31.297694,121.149314],[31.296852,121.149526],[31.29694,121.150266],[31.296208,121.150522],[31.296368,121.151511],[31.294077,121.152718],[31.293901,121.151106],[31.291934,121.151288],[31.291395,121.152891],[31.289964,121.153142],[31.290051,121.154687],[31.288241,121.154734],[31.288294,121.156353],[31.287406,121.156395],[31.287663,121.159303],[31.283984,121.161286],[31.28262,121.159008],[31.281573,121.159406],[31.280759,121.155542],[31.278437,121.155481],[31.277626,121.15438],[31.276736,121.154216],[31.275438,121.150394],[31.275292,121.145212],[31.275468,121.142997],[31.277662,121.142881],[31.277773,121.141401],[31.276673,121.140988],[31.277596,121.137601],[31.278748,121.138032],[31.279641,121.135861],[31.278362,121.135171],[31.278889,121.133689],[31.280258,121.134186],[31.281365,121.13168],[31.280107,121.131051],[31.281207,121.12721],[31.281673,121.127142],[31.283106,121.124327],[31.284409,121.125016],[31.285752,121.121135],[31.286961,121.121335],[31.287152,121.120602],[31.285384,121.120194],[31.285655,121.116355],[31.284432,121.113943],[31.286082,121.111368],[31.287375,121.111552],[31.287498,121.110554],[31.285634,121.109503],[31.286082,121.11074]]];
+const pts = [{"no":1,"p":"P2","name":"苏州好智坊实训","addr":"玉山镇昆嘉路556号E楼203室","lon":121.02276,"lat":31.361857,"lab":"好智坊"},{"no":2,"p":"P2","name":"童程鹿码科技创新中心","addr":"博士路99号雅颂悦里人才专墅","lon":120.906949,"lat":31.40248,"lab":"童程鹿码"},{"no":3,"p":"P1","name":"斯坦星球(花桥体验中心)","addr":"绿地大道303弄35号","lon":121.123758,"lat":31.285323,"lab":"斯坦星球 花桥"},{"no":4,"p":"P1","name":"乐博乐博机器人编程教育科技中心","addr":"周市镇白塘路185-187号","lon":120.983553,"lat":31.399471,"lab":"乐博乐博"},{"no":5,"p":"P1","name":"其然少儿编程","addr":"九方街与紫竹路交叉口东240米","lon":120.961175,"lat":31.404425,"lab":"其然"},{"no":6,"p":"P1","name":"格物机器人","addr":"花桥镇绿地大道719号绿地运动城3楼","lon":121.096619,"lat":31.291618,"lab":"格物 运动城"},{"no":7,"p":"P1","name":"昆山炫凌机器人校外训练基地","addr":"启迪科技园创新大厦2楼211室","lon":120.892966,"lat":31.403205,"lab":"炫凌机器人"},{"no":8,"p":"P1","name":"能力风暴机器人编程创客中心(鑫苑世家店)","addr":"西环路鑫苑世家商铺80-10","lon":121.077875,"lat":31.290147,"lab":"能力风暴"},{"no":9,"p":"P1","name":"电码力量","addr":"玉山镇万象路70号","lon":120.927162,"lat":31.382344,"lab":"电码力量 万象路"},{"no":10,"p":"P1","name":"电码力量","addr":"前进西路1716号中大未来城","lon":120.914207,"lat":31.382573,"lab":"电码力量 未来城"},{"no":11,"p":"P1","name":"佳鸿创客中心","addr":"复客宏图大厦101室","lon":120.96272,"lat":31.392037,"lab":"佳鸿创客"},{"no":12,"p":"P1","name":"莱酷机器人编程中心","addr":"玉山镇黑龙江北路68号A306室","lon":120.982435,"lat":31.380455,"lab":"莱酷"},{"no":13,"p":"P1","name":"军轩机器人","addr":"赵田路8号苏氏产业园","lon":121.029875,"lat":31.342025,"lab":"军轩机器人"},{"no":14,"p":"P1","name":"斯坦星球(昆山招商花园城店)","addr":"萧林中路666号昆山招商花园城L2层","lon":120.957562,"lat":31.4045,"lab":"斯坦星球 花园城"},{"no":15,"p":"P2","name":"趣慧机器人","addr":"张浦镇学士路彩慧苑小区内部底商","lon":120.940062,"lat":31.274841,"lab":"趣慧机器人"},{"no":16,"p":"P2","name":"艾迪创客亲子乐园(蒙特利店)","addr":"周市镇白塘路521号蒙特利亲子乐园1F","lon":120.984324,"lat":31.404916,"lab":"艾迪创客 蒙特利"},{"no":17,"p":"P1","name":"凤凰机器人(兆丰广场店)","addr":"曹安公路99号兆丰99生活广场F2层","lon":121.151743,"lat":31.28833,"lab":"凤凰 兆丰"},{"no":18,"p":"P2","name":"苏州泷特锐机器人智能科技有限公司","addr":"周市镇青阳北路556号君合产业园","lon":120.990605,"lat":31.442563,"lab":"泷特锐"},{"no":19,"p":"P2","name":"韦尔迪机器人","addr":"东荣路与东定路交叉口西60米","lon":120.920175,"lat":31.435625,"lab":"韦尔迪"},{"no":20,"p":"P2","name":"森孚机器人教育(昆山校区)","addr":"春晖路758号望族国际商城F3层","lon":120.982002,"lat":31.397887,"lab":"森孚机器人"},{"no":21,"p":"P1","name":"凤凰机器人创意中心(万达广场昆山青阳店)","addr":"青阳北路238号万达广场昆山青阳店F3层","lon":120.991575,"lat":31.414275,"lab":"凤凰 青阳万达"},{"no":22,"p":"P2","name":"贝乐·编程机器人","addr":"玉山镇万象路62号华润国际社区南门西侧","lon":120.927438,"lat":31.382227,"lab":"贝乐编程"},{"no":24,"p":"P1","name":"伯乐码青少儿编程千灯店","addr":"千灯镇南浦东路268号","lon":121.013717,"lat":31.24776,"lab":"伯乐码 千灯"},{"no":25,"p":"P2","name":"星米高(超华城市广场店)","addr":"玉山镇白马泾路46号超华城市广场F3层","lon":120.941785,"lat":31.380116,"lab":"星米高"},{"no":26,"p":"P2","name":"蓝风编程C","addr":"GHC绿地滨江CLUB26幢2号楼7F","lon":121.076705,"lat":31.287645,"lab":"蓝风编程"},{"no":27,"p":"P2","name":"艾迪创客机器人编程工作室","addr":"前进东路291号世茂新界2号楼1楼","lon":121.050034,"lat":31.383404,"lab":"艾迪创客 世茂"},{"no":28,"p":"P1","name":"凤凰机器人昆山城东创意中心","addr":"开发区华润万家前进店三楼","lon":121.029302,"lat":31.383137,"lab":"凤凰 城东"},{"no":29,"p":"P2","name":"威猛机器人","addr":"威猛路与双马路交叉口南120米","lon":121.050086,"lat":31.18572,"lab":"威猛机器人"},{"no":30,"p":"P2","name":"核桃星球少儿编程","addr":"昆山钜潮荟","lon":121.061475,"lat":31.369175,"lab":"核桃星球"},{"no":31,"p":"P2","name":"码朵编程","addr":"前进东路289号世茂新界1号楼1104室","lon":121.050175,"lat":31.382525,"lab":"码朵编程"},{"no":32,"p":"P2","name":"逆思小树儿童思维训练中心","addr":"27栋1910","lon":121.075459,"lat":31.287074,"lab":"逆思小树"},{"no":33,"p":"P1","name":"实验舱斯托曼乐高·编程(九方城校区)","addr":"萧林中路666号昆山招商花园城L3层","lon":120.955317,"lat":31.4048,"lab":"实验舱 九方城"},{"no":34,"p":"P1","name":"凤凰机器人创意中心(陆家校区)","addr":"朱家弄与友谊路交叉口东80米","lon":121.040468,"lat":31.316753,"lab":"凤凰 陆家"},{"no":35,"p":"P1","name":"格物机器人","addr":"花桥镇集善路102号GHC绿地滨江汇","lon":121.076225,"lat":31.287525,"lab":"格物 滨江汇"},{"no":36,"p":"P2","name":"瑞博教育·少儿编程·拼豆(万象汇店)","addr":"前进西路1288号万象汇商业中心","lon":120.925623,"lat":31.381798,"lab":"瑞博 万象汇"},{"no":37,"p":"P2","name":"创客学堂","addr":"周市镇白塘路521号蒙特利亲子乐园一层","lon":120.984277,"lat":31.404908,"lab":"创客学堂"},{"no":38,"p":"P2","name":"爱迪生科学编程","addr":"春晖路758号望族国际商城F3层","lon":120.981964,"lat":31.397873,"lab":"爱迪生编程"},{"no":39,"p":"P3","name":"春华教育(昆山校区)","addr":"人民南路148号","lon":120.958035,"lat":31.376079,"lab":"春华 昆山"},{"no":40,"p":"P3","name":"昂立国际教育(张浦分校)","addr":"张浦镇商鞅路749号","lon":120.940623,"lat":31.288882,"lab":"昂立 张浦"},{"no":41,"p":"P3","name":"春华教育(花桥春华校区)","addr":"花桥镇徐公桥路中信广场4号楼303室","lon":121.125293,"lat":31.289045,"lab":"春华 花桥"},{"no":42,"p":"P3","name":"松鼠AI智学中心(环城北路店)","addr":"环城北路107号","lon":120.958192,"lat":31.388078,"lab":"松鼠AI 环城北"},{"no":43,"p":"P3","name":"千灯青苗松鼠AI智能学习中心","addr":"千灯镇秦峰中路119号","lon":121.005808,"lat":31.265944,"lab":"松鼠AI 千灯青苗"},{"no":44,"p":"P3","name":"松鼠AI智学中心(景王路店)","addr":"德佑房产二楼","lon":121.056375,"lat":31.370225,"lab":"松鼠AI 景王路"},{"no":45,"p":"P3","name":"松鼠Ai智能学习中心(光明路店)","addr":"光明路与花溪路交叉口西北180米","lon":121.081091,"lat":31.298702,"lab":"松鼠AI 光明路"},{"no":46,"p":"P3","name":"松鼠AI智学中心(育人堂店)","addr":"角里路79号","lon":120.937622,"lat":31.411008,"lab":"松鼠AI 育人堂"},{"no":47,"p":"P3","name":"松鼠AI智能学习中心(青阳港店)","addr":"庆丰东路375-3号","lon":120.994374,"lat":31.35455,"lab":"松鼠AI 青阳港"},{"no":48,"p":"P3","name":"松鼠Ai智能老师","addr":"东辉铂领花园4号楼5室","lon":120.984428,"lat":31.401012,"lab":"松鼠AI 智能老师"},{"no":49,"p":"P3","name":"昂立AI智学中心(花桥店)","addr":"金捷路与远国路交叉口东南40米","lon":121.071575,"lat":31.292825,"lab":"昂立AI 花桥"},{"no":50,"p":"P3","name":"松鼠Ai智适应教育","addr":"千灯镇清华名城售楼处","lon":121.017041,"lat":31.248938,"lab":"松鼠AI 智适应"},{"no":51,"p":"P3","name":"松鼠ai智习室","addr":"玉山镇花园路1122-1124号","lon":120.945699,"lat":31.397851,"lab":"松鼠AI 智习室"},{"no":52,"p":"P3","name":"松鼠AI体验中心(江南理想店)","addr":"开发区珠江新村商业街3号楼2层","lon":120.97079,"lat":31.379901,"lab":"松鼠AI 江南理想"}];
+const colors = {P1:"#C2410C", P2:"#1D4ED8", P3:"#0F766E"};
+const selected = Object.fromEntries(pts.map(d => [d.no, true]));
+let current = pts[0] || null;
+let origin = current ? {lat: current.lat, lon: current.lon, label: current.lab} : null;
+let originMarker = null;
+let circle = null;
+const map = L.map("map", {zoomControl:true, maxZoom:18}).setView([31.385476, 120.980795], 12);
+L.tileLayer("https://wprd0{s}.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scl=1&style=7&x={x}&y={y}&z={z}", {
+  subdomains: "1234", minZoom: 9, maxZoom: 18, attribution: "高德地图"
+}).addTo(map);
+L.control.scale({imperial:false}).addTo(map);
+const boundLayer = L.polygon(cityBound, {
+  color:"#1d4ed8", weight:2.5, opacity:0.95, fillColor:"#1d4ed8", fillOpacity:0.05,
+  interactive:false
+}).addTo(map);
+map.fitBounds(boundLayer.getBounds(), {padding:[20,20], maxZoom:12});
+const shopLayer = L.layerGroup().addTo(map);
+const nearLayer = L.layerGroup().addTo(map);
+const nearList = document.getElementById("near-list");
+const hint = document.getElementById("hint");
+function f(id){ return document.getElementById(id).checked; }
+function visiblePts(){
+  const pOn = {P1: f("f-P1"), P2: f("f-P2"), P3: f("f-P3")};
+  const q = document.getElementById("q").value.trim().toLowerCase();
+  return pts.filter(d => pOn[d.p] && selected[d.no] && (!q || (d.name + d.lab + d.addr).toLowerCase().includes(q)));
+}
+function setOrigin(lat, lon, label, zoom, showDot){
+  origin = {lat, lon, label};
+  if (originMarker) { map.removeLayer(originMarker); originMarker = null; }
+  if (showDot) {
+    originMarker = L.marker([lat, lon], {
+      icon: L.divIcon({className:"", html:'<div class="origin-mk"><i></i></div>', iconSize:[18,18], iconAnchor:[9,9]}),
+      zIndexOffset: 400, interactive: false
+    }).addTo(map);
+  }
+  if (zoom) map.setView([lat, lon], Math.max(map.getZoom(), zoom));
+  hint.textContent = "搜索中心：" + label + "。可改关键词后点搜索。";
+}
+function show(d){
+  current = d;
+  setOrigin(d.lat, d.lon, d.lab, 16, false);
+  drawShops();
+}
+function drawShops(){
+  shopLayer.clearLayers();
+  visiblePts().forEach(d => {
+    const on = current && current.no === d.no ? " active" : "";
+    const html = `<div class="mk${on}" style="color:${colors[d.p]}"><div class="head" style="background:${colors[d.p]}">${d.p.replace("P","")}</div><div class="tip"></div><div class="lab"><b>${d.lab}</b><em style="color:${colors[d.p]}">${d.p}</em></div></div>`;
+    const icon = L.divIcon({className:"", html, iconSize:[28,36], iconAnchor:[14,36]});
+    const m = L.marker([d.lat, d.lon], {icon, zIndexOffset: (current && current.no===d.no)?450:(d.p==="P1"?300:200)});
+    m.on("click", () => show(d));
+    m.addTo(shopLayer);
+  });
+  ["P1","P2","P3"].forEach(k => {
+    document.getElementById("c-"+k).textContent = "(" + pts.filter(d => d.p===k && selected[d.no]).length + ")";
+  });
+}
+function renderList(){
+  const q = document.getElementById("q").value.trim().toLowerCase();
+  const pOn = {P1: f("f-P1"), P2: f("f-P2"), P3: f("f-P3")};
+  const box = document.getElementById("list");
+  box.innerHTML = "";
+  pts.filter(d => pOn[d.p] && (!q || (d.name + d.lab + d.addr).toLowerCase().includes(q))).forEach(d => {
+    const row = document.createElement("label");
+    row.className = "store";
+    row.innerHTML = `<input type="checkbox" ${selected[d.no]?"checked":""}><b class="${d.p.toLowerCase()}">${d.p}</b><span>${d.lab}<br><span style="color:#777">${d.name}</span></span>`;
+    row.querySelector("input").addEventListener("change", e => { selected[d.no]=e.target.checked; drawShops(); });
+    row.addEventListener("click", ev => { if (ev.target.tagName !== "INPUT") show(d); });
+    box.appendChild(row);
+  });
+  drawShops();
+}
+function clearNear(){
+  nearLayer.clearLayers();
+  if (circle) { map.removeLayer(circle); circle = null; }
+  nearList.textContent = origin ? ("当前中心：" + origin.label + "。再点搜索。") : "先点一家店或地图，再搜附近。";
+}
+function keyword(){
+  return (document.getElementById("map-q").value || document.getElementById("near-q").value || "小学").trim();
+}
+function jsonp(url){
+  return new Promise((resolve, reject) => {
+    const cb = "amapCb" + Date.now();
+    const s = document.createElement("script");
+    const timer = setTimeout(() => { cleanup(); reject(new Error("timeout")); }, 12000);
+    function cleanup(){ clearTimeout(timer); delete window[cb]; s.remove(); }
+    window[cb] = data => { cleanup(); resolve(data); };
+    s.onerror = () => { cleanup(); reject(new Error("script")); };
+    s.src = url + (url.includes("?") ? "&" : "?") + "callback=" + cb;
+    document.body.appendChild(s);
+  });
+}
+async function amapAround(lat, lon, kw, radius){
+  if (!KEY) throw new Error("missing-key");
+  const qs = "key=" + KEY + "&location=" + lon + "," + lat + "&keywords=" + encodeURIComponent(kw) + "&radius=" + radius + "&offset=20&page=1&extensions=base&output=json";
+  const url = "https://restapi.amap.com/v3/place/around?" + qs;
+  try {
+    const r = await fetch(url);
+    const data = await r.json();
+    if (data && data.status === "1") return data;
+  } catch (e) {}
+  return jsonp("https://restapi.amap.com/v3/place/around?" + qs);
+}
+async function searchNear(useCenter){
+  const kw = keyword();
+  document.getElementById("near-q").value = kw;
+  document.getElementById("map-q").value = kw;
+  if (useCenter) {
+    const c = map.getCenter();
+    current = null;
+    setOrigin(c.lat, c.lng, "地图中心", 0, true);
+    drawShops();
+  }
+  if (!origin) { nearList.textContent = "先点一家店，或点地图空白处。"; return; }
+  const radius = document.getElementById("near-r").value;
+  nearList.textContent = "正在搜 " + origin.label + " 附近的「" + kw + "」…";
+  try {
+    const data = await amapAround(origin.lat, origin.lon, kw, radius);
+    nearLayer.clearLayers();
+    if (circle) map.removeLayer(circle);
+    circle = L.circle([origin.lat, origin.lon], {radius:+radius, color:"#1d4ed8", weight:1, fillOpacity:0.04}).addTo(map);
+    const pois = data.pois || [];
+    if (!pois.length) {
+      nearList.textContent = origin.label + " 附近 " + (radius/1000) + " 公里没搜到「" + kw + "」。可换词或加大范围。";
+      return;
+    }
+    nearList.innerHTML = "<b>" + origin.label + " 附近 " + pois.length + " 处「" + kw + "」</b>";
+    pois.forEach(p => {
+      const loc = (p.location || "").split(",");
+      if (loc.length !== 2) return;
+      const lat = +loc[1], lon = +loc[0];
+      const dist = p.distance ? Math.round(p.distance) + " 米" : "";
+      const icon = L.divIcon({className:"", html:`<div class="near-mk"><i></i><div class="lab">${p.name}</div></div>`, iconSize:[14,14], iconAnchor:[7,7]});
+      L.marker([lat, lon], {icon, zIndexOffset:100}).addTo(nearLayer)
+        .bindPopup("<b>" + (p.name || kw) + "</b><br>" + dist + "<br>" + (p.address || ""));
+      const row = document.createElement("div");
+      row.className = "near-item";
+      row.innerHTML = `<b>${p.name}</b><br><span>${dist} · ${p.address || ""}</span>`;
+      row.onclick = () => { map.setView([lat, lon], 17); };
+      nearList.appendChild(row);
+    });
+    map.setView([origin.lat, origin.lon], Math.max(map.getZoom(), 15));
+    hint.textContent = origin.label + " 附近「" + kw + "」" + pois.length + " 处。黄标可点开。";
+  } catch (e) {
+    nearList.textContent = e && e.message === "missing-key"
+      ? "附近搜索需要高德 Web 服务 Key。可在地址后加 ?key=你的Key，或在控制台执行 localStorage.AMAP_MAPS_API_KEY='你的Key'。"
+      : "附近搜索暂时失败。请确认能上网，或用本地服务器打开这个网页。";
+  }
+}
+map.on("click", e => {
+  current = null;
+  setOrigin(e.latlng.lat, e.latlng.lng, "地图选点", 0, true);
+  drawShops();
+});
+document.getElementById("f-bound").addEventListener("change", () => {
+  if (document.getElementById("f-bound").checked) boundLayer.addTo(map);
+  else map.removeLayer(boundLayer);
+});
+["f-P1","f-P2","f-P3"].forEach(id => document.getElementById(id).addEventListener("change", renderList));
+document.getElementById("q").addEventListener("input", renderList);
+document.getElementById("all").onclick = () => { pts.forEach(d => selected[d.no]=true); document.getElementById("f-P1").checked=document.getElementById("f-P2").checked=document.getElementById("f-P3").checked=true; renderList(); };
+document.getElementById("none").onclick = () => { pts.forEach(d => selected[d.no]=false); renderList(); };
+document.getElementById("onlyp1").onclick = () => { document.getElementById("f-P1").checked=true; document.getElementById("f-P2").checked=false; document.getElementById("f-P3").checked=false; pts.forEach(d => selected[d.no]= d.p==="P1"); renderList(); };
+document.getElementById("near-btn").onclick = () => searchNear(false);
+document.getElementById("near-center").onclick = () => searchNear(true);
+document.getElementById("near-clear").onclick = clearNear;
+document.getElementById("map-search").onclick = () => searchNear(false);
+document.getElementById("map-q").addEventListener("keydown", e => { if (e.key === "Enter") searchNear(false); });
+document.getElementById("near-q").addEventListener("keydown", e => { if (e.key === "Enter") searchNear(false); });
+renderList();
+if (current) setOrigin(current.lat, current.lon, current.lab, 0, false);
+</script>
+</body>
+</html>

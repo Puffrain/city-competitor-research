@@ -1,0 +1,2 @@
+// 复制为 amap-key.js 后填入，amap-key.js 不会进 Git
+window.AMAP_MAPS_API_KEY = "your_amap_web_service_key";
